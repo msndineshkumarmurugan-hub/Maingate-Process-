@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2557d6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gate Pass">
+<title>Gate Pass</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#14171c;--mut:#667085;--ac:#2557d6;--acx:#fff;--bd:#dde1e8;--bad:#c0392b;--ok:#1e8e3e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#111317;--card:#1b1e24;--tx:#eef0f3;--mut:#9aa3b2;--ac:#6f95ff;--acx:#0b1020;--bd:#2b303a;--bad:#ff8a7a;--ok:#5ad27a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Noto Sans Tamil","Segoe UI",sans-serif}
+main{max-width:480px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+h1{font-size:20px;margin:0}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--mut);font:600 15px inherit;font-family:inherit;cursor:pointer}
+.tab.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.f:last-child{margin-bottom:0}
+.f label{font-size:13px;color:var(--mut)}
+.f input{font:600 18px ui-monospace,Menlo,monospace;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px;width:100%;text-transform:uppercase}
+.btns{display:flex;gap:8px}
+.btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:56px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:600 15px inherit;font-family:inherit;cursor:pointer;text-align:center;padding:0 8px}
+.btn.pri{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.btn.sm{min-height:44px;font-size:14px}
+.btn.dis{opacity:.45}
+.sel{flex:none;min-height:36px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:600 13px inherit;font-family:inherit;padding:0 6px}
+input[type=file]{display:none}
+.dt{font:600 14px ui-monospace,Menlo,monospace;color:var(--mut);margin-top:10px}
+.status{font-size:14px;color:var(--mut);min-height:20px;margin-top:6px}
+.status.err{color:var(--bad)}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--bd)}
+li:first-child{border-top:0}
+li input{flex:1;min-width:0;font:600 16px ui-monospace,Menlo,monospace;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px}
+li .x{border:0;background:transparent;color:var(--bad);font-size:20px;cursor:pointer;padding:6px 10px}
+.pend{color:var(--mut);font-size:14px;flex:1}
+.qrbox{display:flex;justify-content:center;padding:14px;background:#fff;border-radius:12px}
+.qrbox svg{width:100%;max-width:300px;height:auto;display:block}
+.row{word-break:break-all;font:600 15px ui-monospace,Menlo,monospace;margin:12px 0 10px}
+.empty{color:var(--mut);text-align:center;padding:18px 0}
+.verdict{border:2px solid var(--bd);border-radius:12px;padding:12px;margin-top:10px;font-size:15px}
+.verdict.ok{border-color:var(--ok)}
+.verdict.bad{border-color:var(--bad)}
+.verdict b.t{display:block;font-size:17px;margin-bottom:6px}
+.verdict.ok b.t{color:var(--ok)}
+.verdict.bad b.t{color:var(--bad)}
+.cmp{font:700 20px ui-monospace,Menlo,monospace;letter-spacing:1px;margin:2px 0 8px;word-break:break-all}
+.cmp small{display:block;font:600 12px system-ui,sans-serif;letter-spacing:0;color:var(--mut)}
+.cmp .d{background:var(--bad);color:#fff;border-radius:3px;padding:0 1px}
+.seg .btn{min-height:50px}
+#ticket{display:none}
+.t-h{font:800 20px/1.2 system-ui,Arial,sans-serif;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px;letter-spacing:1px}
+.t-l{font:600 11px system-ui,Arial,sans-serif;margin-top:6px;text-transform:uppercase}
+.t-v{font:800 20px/1.25 ui-monospace,Menlo,Arial,sans-serif;word-break:break-all}
+#tQr{margin-top:10px}
+#tQr svg{width:var(--qr,42mm);height:auto;display:block;margin:0 auto}
+@media print{
+  :root{padding:0!important}
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  body>*:not(#ticket){display:none!important}
+  #ticket{display:block!important;color:#000;background:#fff;text-align:center;padding:2mm 3mm 6mm;width:100%}
+}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <h1>Gate Pass</h1>
+  <select class="sel" id="pw" aria-label="paper"><option value="58">58mm</option><option value="80">80mm</option></select>
+</div>
+<div class="card">
+  <div style="font-size:13px;color:var(--mut);margin-bottom:8px">1) Inward / Outward</div>
+  <div class="btns seg">
+    <button class="btn" id="mIn">⬇️ INWARD</button>
+    <button class="btn" id="mOut">⬆️ OUTWARD</button>
+  </div>
+  <div style="font-size:13px;color:var(--mut);margin:14px 0 8px">2) எந்த Pass?</div>
+  <div class="btns seg">
+    <button class="btn dis" id="mRep">📄 Reporting Pass</button>
+    <button class="btn dis" id="mGate">🚪 Gate Pass</button>
+  </div>
+</div>
+
+<!-- ============ TAB 1: REPORTING PASS ============ -->
+<section id="s1" hidden>
+  <div class="card">
+    <div class="f"><label for="gp">Reporting / Gate Pass No</label><input id="gp" autocomplete="off"></div>
+    <div class="f"><label for="veh">Vehicle No (முதலில் இதை அடியுங்கள்)</label><input id="veh" placeholder="TN01AB1234" autocomplete="off" autocapitalize="characters"></div>
+  </div>
+  <div class="card">
+    <div class="btns">
+      <label class="btn pri dis" id="camL" for="cam">📷 ஃபோட்டோ எடு</label>
+      <label class="btn dis" id="galL" for="gal">🖼️ கேலரி</label>
+    </div>
+    <input id="cam" type="file" accept="image/*" capture="environment">
+    <input id="gal" type="file" accept="image/*" multiple>
+    <div class="status" id="invHint"></div>
+    <div class="dt" id="dt"></div>
+    <div class="status" id="status">OCR ரெடி ஆகிறது…</div>
+  </div>
+  <div class="card"><ul id="list"><li class="empty">இன்னும் ஃபோட்டோ இல்லை</li></ul></div>
+  <div class="card">
+    <div class="qrbox" id="qrbox"></div>
+    <div class="row" id="row"></div>
+    <div class="btns" style="margin-bottom:8px">
+      <button class="btn sm pri" id="print1">🖨️ பிரிண்ட்</button>
+      <button class="btn sm" id="th1">Thermer</button>
+    </div>
+    <div class="btns" style="margin-bottom:8px">
+      <button class="btn sm" id="copy1">Copy</button>
+      <button class="btn sm pri" id="next1">அடுத்த வண்டி ➜</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TAB 2: GATE PASS ============ -->
+<section id="s2" hidden>
+  <div class="card">
+    <div class="status" id="gdir" style="margin:0 0 10px;font-weight:700"></div>
+    <div class="btns">
+      <label class="btn pri" for="rqr">📷 Reporting Pass QR ஸ்கேன்</label>
+    </div>
+    <input id="rqr" type="file" accept="image/*" capture="environment">
+    <div class="status" id="gstat1"></div>
+    <div class="f" style="margin-top:10px"><label for="g_gp">Reporting Pass No (= Gate Pass No)</label><input id="g_gp" autocomplete="off"></div>
+    <div class="f"><label for="g_rveh">Reporting Pass-ல் உள்ள Vehicle No</label><input id="g_rveh" placeholder="TN01AB1234" autocomplete="off" autocapitalize="characters"></div>
+  </div>
+
+  <div class="card">
+    <div class="btns">
+      <label class="btn pri" for="pcam">📷 Vehicle No ஃபோட்டோ</label>
+      <label class="btn" for="pgal">🖼️ கேலரி</label>
+    </div>
+    <input id="pcam" type="file" accept="image/*" capture="environment">
+    <input id="pgal" type="file" accept="image/*">
+    <div class="status" id="gstat2"></div>
+    <div class="f" style="margin-top:10px"><label for="g_pveh">ஃபோட்டோவில் படித்த Vehicle No (தவறு இருந்தால் திருத்தலாம்)</label><input id="g_pveh" autocomplete="off" autocapitalize="characters"></div>
+    <div class="verdict" id="verdict" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="qrbox" id="qrbox2"></div>
+    <div class="row" id="row2"></div>
+    <div class="dt" id="dt2"></div>
+    <div class="btns" style="margin:10px 0 8px">
+      <button class="btn sm pri" id="print2">🖨️ பிரிண்ட்</button>
+      <button class="btn sm" id="th2">Thermer</button>
+    </div>
+    <div class="btns">
+      <button class="btn sm" id="copy2">Copy</button>
+      <button class="btn sm pri" id="next2">அடுத்த வண்டி ➜</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<style id="pg"></style>
+<div id="ticket"><div class="t-h" id="tH"></div><div id="tRows"></div><div id="tQr"></div></div>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var EMPTY='<div class="empty" style="color:#667085">QR இங்கே வரும்</div>';
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  // ---------- storage helpers ----------
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+  // ---------- shared: QR, time, tabs ----------
+  function qrSvg(text){var q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:6,margin:0,scalable:true})}
+  function drawInto(box,text){
+    if(!text){box.innerHTML=EMPTY;return}
+    try{box.innerHTML=qrSvg(text)}catch(e){box.innerHTML='<div class="empty" style="color:#c0392b">QR உருவாக்க முடியவில்லை</div>'}
+  }
+  function nowStamp(){
+    var d=new Date(),p=function(n){return String(n).padStart(2,'0')};
+    return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+'_'+p(d.getHours())+':'+p(d.getMinutes());
+  }
+  var M={dir:'',type:''};
+  function applyMode(){
+    $('mIn').classList.toggle('pri',M.dir==='INWARD');
+    $('mOut').classList.toggle('pri',M.dir==='OUTWARD');
+    $('mRep').classList.toggle('dis',!M.dir);$('mGate').classList.toggle('dis',!M.dir);
+    $('mRep').classList.toggle('pri',M.type==='REP');
+    $('mGate').classList.toggle('pri',M.type==='GATE');
+    $('s1').hidden=!(M.dir&&M.type==='REP');
+    $('s2').hidden=!(M.dir&&M.type==='GATE');
+    $('gdir').textContent=M.dir?('Gate Pass · '+M.dir):'';
+    $('invHint').textContent=M.dir==='INWARD'?'INWARD: இன்வாய்ஸ் நம்பர் ஃபோட்டோ எடுக்க வேண்டும்.':(M.dir==='OUTWARD'?'OUTWARD: இன்வாய்ஸ் ஃபோட்டோ விருப்பம் மட்டும்.':'');
+    if(M.type==='REP')drawQR1();
+    if(M.type==='GATE')gateRender();
+  }
+  function setDir(d){M.dir=d;applyMode()}
+  function setType(t){
+    if(!M.dir){alert('முதலில் INWARD அல்லது OUTWARD தேர்ந்தெடுங்கள்.');return}
+    M.type=t;applyMode();window.scrollTo(0,document.body.scrollHeight>900?200:0)}
+  $('mIn').onclick=function(){setDir('INWARD')};
+  $('mOut').onclick=function(){setDir('OUTWARD')};
+  $('mRep').onclick=function(){setType('REP')};
+  $('mGate').onclick=function(){setType('GATE')};
+
+  $('pw').value=lsGet('invqr_pw')||'58';
+  $('pw').addEventListener('change',function(){lsSet('invqr_pw',$('pw').value)});
+
+  // ---------- OCR engine (on device) ----------
+  var workerP=null,queue=[],busy=false;
+  function ocrStatus(t,err){
+    ['status','gstat2'].forEach(function(id){var e=$(id);if(e.dataset.ocr==='1'||id==='status'){e.textContent=t||'';e.className='status'+(err?' err':'')}});
+  }
+  function getWorker(){
+    if(workerP)return workerP;
+    workerP=(async function(){
+      if(!window.Tesseract)throw new Error('lib');
+      return await Tesseract.createWorker('eng');
+    })();
+    workerP.then(function(){if($('status').dataset.boot!=='1'){}$('status').textContent=''},function(){
+      $('status').textContent='OCR லோட் ஆகவில்லை. இன்டர்நெட் இருக்கா பாருங்கள், page-ஐ refresh செய்யுங்கள்.';$('status').className='status err';workerP=null});
+    return workerP;
+  }
+  function prep(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file),img=new Image();
+      img.onload=function(){
+        var m=1800,s=Math.min(1,m/Math.max(img.width,img.height));
+        var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+        var g=c.getContext('2d');g.drawImage(img,0,0,c.width,c.height);
+        URL.revokeObjectURL(url);
+        try{
+          var d=g.getImageData(0,0,c.width,c.height),p=d.data,lo=255,hi=0,i,v;
+          for(i=0;i<p.length;i+=4){v=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2];p[i]=v;if(v<lo)lo=v;if(v>hi)hi=v}
+          var k=hi>lo?255/(hi-lo):1;
+          for(i=0;i<p.length;i+=4){v=(p[i]-lo)*k;p[i]=p[i+1]=p[i+2]=v}
+          g.putImageData(d,0,0);
+        }catch(e){}
+        c.toBlob(function(b){b?res(b):rej(new Error('blob'))},'image/png');
+      };
+      img.onerror=function(){URL.revokeObjectURL(url);rej(new Error('img'))};
+      img.src=url;
+    });
+  }
+  async function pump(){
+    if(busy)return;busy=true;
+    while(queue.length){
+      var job=queue.shift();
+      try{
+        var w=await getWorker();
+        var blob=await prep(job.file);
+        if(job.kind==='inv'){
+          await w.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/:.# ',tessedit_pageseg_mode:'6'});
+          var r=await w.recognize(blob);
+          var t=pickInvoice(r.data.text||'');
+          if(!t){items=items.filter(function(i){return i!==job.it});setStatus('நம்பர் தெரியவில்லை. நம்பரை நெருக்கமாக, தெளிவாக மறுபடி எடுங்கள்.',true)}
+          else{job.it.text=t.replace(/,/g,'');job.it.pending=false;setStatus('')}
+          if(!items.length)stamp='';
+          renderInv();
+        }else{
+          await w.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',tessedit_pageseg_mode:'6'});
+          var r2=await w.recognize(blob);
+          var raw=(r2.data.text||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+          var plate=fixPlate(raw)||fallbackPlate(r2.data.text||'');
+          gStat2(plate?'':'நம்பர் படிக்க முடியவில்லை. நெருக்கமாக, தெளிவாக மறுபடி எடுங்கள் அல்லது கையால் அடியுங்கள்.',!plate);
+          if(plate){$('g_pveh').value=plate}
+          gateRender();
+        }
+      }catch(e){
+        if(job.kind==='inv'){items=items.filter(function(i){return i!==job.it});setStatus('படிக்க முடியவில்லை, மறுபடி முயற்சிக்கவும்.',true);renderInv()}
+        else{gStat2('படிக்க முடியவில்லை, மறுபடி முயற்சிக்கவும்.',true)}
+      }
+    }
+    busy=false;
+  }
+
+  // ---------- vehicle plate parsing ----------
+  var L2D={O:'0',Q:'0',D:'0',I:'1',L:'1',Z:'2',S:'5',B:'8',G:'6',T:'7'},D2L={'0':'O','1':'I','2':'Z','5':'S','8':'B','6':'G'};
+  function fixPlate(s){
+    for(var n=11;n>=8;n--){
+      for(var st=0;st+n<=s.length;st++){
+        var w=s.substr(st,n),k=n-8,out='';
+        for(var i=0;i<n;i++){
+          var ch=w.charAt(i),isL=(i<2)||(i>=4&&i<4+k);
+          if(isL){if(/\d/.test(ch))ch=D2L[ch]||ch}else{if(/[A-Z]/.test(ch))ch=L2D[ch]||ch}
+          out+=ch;
+        }
+        if(/^[A-Z]{2}\d{2}[A-Z]{0,3}\d{4}$/.test(out))return out;
+      }
+    }
+    return '';
+  }
+  function fallbackPlate(text){
+    var toks=text.toUpperCase().split(/\s+/).map(function(x){return x.replace(/[^A-Z0-9]/g,'')}).filter(function(x){return x.length>=5&&/\d/.test(x)});
+    toks.sort(function(a,b){return b.length-a.length});
+    return toks[0]||'';
+  }
+  function normV(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+
+  // ======================================================
+  //                TAB 1 : REPORTING PASS
+  // ======================================================
+  var items=[],stamp='';
+  var st=$('status');
+  function setStatus(t,err){st.textContent=t||'';st.className='status'+(err?' err':'')}
+
+  $('gp').value=lsGet('invqr_gp')||'1';
+  $('gp').addEventListener('input',function(){lsSet('invqr_gp',$('gp').value.trim());drawQR1()});
+  function bump(s){
+    var m=s.match(/^(.*?)(\d+)$/);if(!m)return s;
+    var n=String(parseInt(m[2],10)+1);while(n.length<m[2].length)n='0'+n;
+    return m[1]+n;
+  }
+  function veh(){return $('veh').value.replace(/\s+/g,'').toUpperCase()}
+  function updateBtns(){var ok=!!veh();$('camL').classList.toggle('dis',!ok);$('galL').classList.toggle('dis',!ok)}
+  $('veh').addEventListener('input',function(){updateBtns();drawQR1()});
+  ['camL','galL'].forEach(function(id){
+    $(id).addEventListener('click',function(e){
+      if(!veh()){e.preventDefault();setStatus('முதலில் மேலே Vehicle No அடியுங்கள், பிறகு ஃபோட்டோ எடுக்கலாம்.',true);$('veh').focus()}
+    });
+  });
+
+  function invs(){return items.filter(function(i){return !i.pending&&i.text}).map(function(i){return i.text.trim().replace(/\s+/g,'')}).filter(Boolean)}
+  function payload1(){
+    var inv=invs();
+    if(!veh())return '';
+    if(!inv.length&&M.dir!=='OUTWARD')return '';
+    var gp=$('gp').value.trim().replace(/\s+/g,'');
+    return [gp,veh(),stamp||nowStamp(),inv.join(',')].filter(Boolean).join(' ');
+  }
+  function renderInv(){
+    var ul=$('list');ul.innerHTML='';
+    if(!items.length){var e=document.createElement('li');e.className='empty';e.textContent='இன்னும் ஃபோட்டோ இல்லை';ul.appendChild(e)}
+    items.forEach(function(it){
+      var li=document.createElement('li');
+      if(it.pending){var s=document.createElement('span');s.className='pend';s.textContent='⏳ படிக்கிறேன்…';li.appendChild(s)}
+      else{var inp=document.createElement('input');inp.value=it.text;inp.addEventListener('input',function(){it.text=inp.value;drawQR1()});li.appendChild(inp)}
+      var x=document.createElement('button');x.className='x';x.textContent='✕';
+      x.onclick=function(){items=items.filter(function(i){return i!==it});if(!items.length)stamp='';renderInv()};
+      li.appendChild(x);ul.appendChild(li);
+    });
+    drawQR1();
+  }
+  function drawQR1(){
+    var t=payload1();
+    $('dt').textContent=t?('🕒 '+(stamp||nowStamp()).replace('_',' ')):'';
+    t=payload1();$('row').textContent=t;drawInto($('qrbox'),t);
+  }
+  function pickInvoice(text){
+    var t=text.replace(/[|]/g,'I');
+    var m=t.match(/(?:inv(?:oice)?|bill)\s*\.?\s*(?:no|number|num|#)?\s*\.?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\-\/]{2,})/i);
+    if(m&&/\d/.test(m[1]))return m[1];
+    var toks=t.split(/\s+/).map(function(x){return x.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g,'')}).filter(function(x){return x.length>=3&&/\d/.test(x)});
+    toks.sort(function(a,b){return b.length-a.length});
+    return toks[0]||'';
+  }
+  function addInvFiles(files){
+    if(!veh()){setStatus('முதலில் Vehicle No அடியுங்கள்.',true);return}
+    if(!stamp)stamp=nowStamp();
+    Array.prototype.forEach.call(files,function(f){var it={text:'',pending:true};items.push(it);queue.push({kind:'inv',it:it,file:f})});
+    renderInv();pump();
+  }
+  $('cam').addEventListener('change',function(e){addInvFiles(e.target.files);e.target.value=''});
+  $('gal').addEventListener('change',function(e){addInvFiles(e.target.files);e.target.value=''});
+  $('next1').onclick=function(){
+    if(items.length&&!confirm('இந்த பதிவை முடித்து அடுத்த வண்டிக்குப் போகவா? (Pass No ஒன்று கூடும், மற்றவை அழியும்)'))return;
+    var g=bump($('gp').value.trim()||'0');$('gp').value=g;lsSet('invqr_gp',g);
+    items=[];stamp='';$('veh').value='';updateBtns();renderInv();setStatus('');$('veh').focus();
+  };
+  $('copy1').onclick=function(){copyText(payload1(),setStatus)};
+  function copyText(t,say){
+    if(!t)return;
+    try{navigator.clipboard.writeText(t).then(function(){say('Copy ஆச்சு ✓')},function(){say('Copy முடியவில்லை',true)})}catch(e){say('Copy முடியவில்லை',true)}
+  }
+
+  // ======================================================
+  //                 TAB 2 : GATE PASS
+  // ======================================================
+  var G={stamp:''};
+  function gStat1(t,err){var e=$('gstat1');e.textContent=t||'';e.className='status'+(err?' err':'')}
+  function gStat2(t,err){var e=$('gstat2');e.textContent=t||'';e.className='status'+(err?' err':'')}
+  $('gstat2').dataset.ocr='1';
+
+  function gv(id){return $(id).value}
+  ['g_gp','g_rveh','g_pveh'].forEach(function(id){$(id).addEventListener('input',gateRender)});
+
+  function payload2(){
+    var gp=gv('g_gp').trim().replace(/\s+/g,'');
+    return [gp,normV(gv('g_pveh')),G.stamp,M.dir].filter(Boolean).join(' ');
+  }
+  function diffRow(a,b){
+    var n=Math.max(a.length,b.length),ha='',hb='';
+    for(var i=0;i<n;i++){
+      var x=a.charAt(i),y=b.charAt(i),bad=x!==y;
+      ha+=bad?'<span class="d">'+esc(x||'·')+'</span>':esc(x);
+      hb+=bad?'<span class="d">'+esc(y||'·')+'</span>':esc(y);
+    }
+    return [ha,hb];
+  }
+
+  function gateRender(){
+    var gp=gv('g_gp').trim(),r=normV(gv('g_rveh')),p=normV(gv('g_pveh'));
+    var V=$('verdict'),ready=false,html='',cls='';
+    if(!r){html='<b class="t">Reporting Pass Vehicle No இல்லை</b>Reporting Pass QR-ஐ ஸ்கேன் செய்யுங்கள் அல்லது நம்பரை அடியுங்கள்.';cls=''}
+    else if(!p){html='<b class="t">Vehicle No ஃபோட்டோ எடுங்கள்</b>';cls=''}
+    else if(r===p){html='<b class="t">✅ நம்பர் சரியாக உள்ளது</b>'+esc(p);cls='ok';ready=true}
+    else{
+      var d=diffRow(r,p);
+      html='<b class="t">❌ நம்பர் பொருந்தவில்லை</b>'+
+        '<div class="cmp"><small>Reporting Pass-ல் உள்ளது</small>'+d[0]+'</div>'+
+        '<div class="cmp"><small>ஃபோட்டோவில் உள்ளது</small>'+d[1]+'</div>'+
+        '<button class="btn sm pri" id="fixBtn" style="width:100%">Reporting Pass நம்பரை ஃபோட்டோ நம்பராக மாற்று</button>'+
+        '<div class="status">ஃபோட்டோவை OCR தவறாகப் படித்திருந்தால், மேலே உள்ள பெட்டியில் திருத்துங்கள் அல்லது மறுபடி ஃபோட்டோ எடுங்கள்.</div>';
+      cls='bad';
+    }
+    V.hidden=!html;V.className='verdict '+cls;V.innerHTML=html;
+    var fb=$('fixBtn');
+    if(fb)fb.onclick=function(){$('g_rveh').value=p;gateRender()};
+
+    var out='';
+    if(ready&&!gp){V.innerHTML+='<div class="status err">Reporting Pass No தேவை.</div>'}
+    else if(ready&&!M.dir){V.innerHTML+='<div class="status err">இன்வேர்டா, அவுட்வேர்டா என்று தேர்ந்தெடுங்கள்.</div>'}
+    else if(ready){if(!G.stamp)G.stamp=nowStamp();out=payload2()}
+    $('dt2').textContent=out&&G.stamp?('🕒 '+G.stamp.replace('_',' ')):'';
+    $('row2').textContent=out;drawInto($('qrbox2'),out);
+  }
+
+  async function decodeQR(file){
+    var bmp=await createImageBitmap(file);
+    if('BarcodeDetector' in window){
+      try{var det=new BarcodeDetector({formats:['qr_code']});var rs=await det.detect(bmp);if(rs.length)return rs[0].rawValue}catch(e){}
+    }
+    if(window.jsQR){
+      var s=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+      var c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+      var g=c.getContext('2d');g.drawImage(bmp,0,0,c.width,c.height);
+      var id=g.getImageData(0,0,c.width,c.height);
+      var res=jsQR(id.data,id.width,id.height,{inversionAttempts:'attemptBoth'});
+      if(res)return res.data;
+    }
+    return '';
+  }
+  $('rqr').addEventListener('change',async function(e){
+    var f=e.target.files[0];e.target.value='';if(!f)return;
+    gStat1('QR படிக்கிறேன்…');
+    try{
+      var t=(await decodeQR(f)).trim(),parts=t.split(/\s+/);
+      if(parts.length>=3&&/^\d\d-\d\d-\d{4}_/.test(parts[2])){
+        $('g_gp').value=parts[0];$('g_rveh').value=parts[1];
+        G.stamp='';$('g_pveh').value='';gStat2('');gStat1('Reporting Pass படிக்கப்பட்டது ✓');gateRender();
+      }else if(t){gStat1('இது Reporting Pass QR போல் இல்லை.',true)}
+      else{gStat1('QR தெரியவில்லை. QR-ஐ நெருக்கமாக, தெளிவாக மறுபடி எடுங்கள் அல்லது நம்பர்களை கையால் அடியுங்கள்.',true)}
+    }catch(err){gStat1('QR படிக்க முடியவில்லை.',true)}
+  });
+
+  function addPlate(files){
+    var f=files[0];if(!f)return;
+    G.stamp=nowStamp();gStat2('⏳ படிக்கிறேன்…');
+    queue.push({kind:'plate',file:f});pump();
+  }
+  $('pcam').addEventListener('change',function(e){addPlate(e.target.files);e.target.value=''});
+  $('pgal').addEventListener('change',function(e){addPlate(e.target.files);e.target.value=''});
+
+  $('copy2').onclick=function(){copyText(payload2(),gStat2)};
+  $('next2').onclick=function(){
+    if(payload2()&&!confirm('அடுத்த வண்டிக்குப் போகவா? (இந்த Gate Pass விவரங்கள் அழியும்)'))return;
+    $('g_gp').value='';$('g_rveh').value='';$('g_pveh').value='';G.stamp='';gStat1('');gStat2('');gateRender();
+  };
+
+  // ======================================================
+  //                       PRINT
+  // ======================================================
+  function spec1(){return {title:'REPORTING PASS',payload:payload1(),rows:[['Pass No',$('gp').value.trim()],['Date & Time',stamp.replace('_',' ')],['Vehicle No',veh()]]}}
+  function spec2(){return {title:'GATE PASS',payload:payload2(),rows:[['Pass No',gv('g_gp').trim()],['Vehicle No',normV(gv('g_pveh'))],['Date & Time',G.stamp.replace('_',' ')],['Inward / Outward',M.dir]]}}
+
+  function fillTicket(sp){
+    var pw=$('pw').value;
+    $('pg').textContent='@page{size:'+pw+'mm auto;margin:0}';
+    document.documentElement.style.setProperty('--qr',(pw==='80'?56:42)+'mm');
+    $('tH').textContent=sp.title;
+    $('tRows').innerHTML=sp.rows.map(function(r){return '<div class="t-l">'+esc(r[0])+'</div><div class="t-v">'+esc(r[1])+'</div>'}).join('');
+    try{$('tQr').innerHTML=(function(){var q=qrcode(0,'M');q.addData(sp.payload);q.make();return q.createSvgTag({cellSize:4,margin:2,scalable:true})})()}catch(e){$('tQr').textContent=''}
+  }
+  function ticketCanvas(sp){
+    var W=$('pw').value==='80'?576:384,pad=16;
+    var q=qrcode(0,'M');q.addData(sp.payload);q.make();
+    var n=q.getModuleCount(),qz=2,cell=Math.max(2,Math.min(8,Math.floor((W-2*pad)/(n+2*qz)))),qs=(n+2*qz)*cell;
+    var H=pad+46+16+sp.rows.length*66+12+qs+44;
+    var c=document.createElement('canvas');c.width=W;c.height=H;
+    var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.fillStyle='#000';g.textAlign='center';g.textBaseline='alphabetic';
+    function fit(t,size,wt){var f=size;do{g.font=wt+' '+f+'px Arial, Helvetica, sans-serif';f-=2}while(g.measureText(t).width>W-2*pad&&f>12)}
+    var y=pad;
+    fit(sp.title,36,'bold');y+=36;g.fillText(sp.title,W/2,y);
+    y+=10;g.fillRect(pad,y,W-2*pad,3);y+=16;
+    sp.rows.forEach(function(r){
+      g.font='bold 18px Arial, Helvetica, sans-serif';g.fillText(r[0].toUpperCase(),W/2,y+18);
+      fit(r[1],34,'bold');g.fillText(r[1],W/2,y+18+38);y+=66;
+    });
+    y+=12;
+    var x0=Math.floor((W-qs)/2);
+    for(var r=0;r<n;r++)for(var k=0;k<n;k++)if(q.isDark(r,k))g.fillRect(x0+(qz+k)*cell,y+(qz+r)*cell,cell,cell);
+    return c;
+  }
+  function doPrint(sp,say){
+    if(!sp.payload){say('முதலில் QR உருவாக்குங்கள்.',true);return}
+    fillTicket(sp);window.print();
+  }
+  function doThermer(sp,say){
+    if(!sp.payload){say('முதலில் QR உருவாக்குங்கள்.',true);return}
+    var c;try{c=ticketCanvas(sp)}catch(e){say('பாஸ் உருவாக்க முடியவில்லை.',true);return}
+    c.toBlob(function(b){
+      if(!b){say('பாஸ் உருவாக்க முடியவில்லை.',true);return}
+      var f=new File([b],'pass.png',{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(function(){})}
+      else{
+        var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pass.png';document.body.appendChild(a);a.click();a.remove();
+        say('Share வசதி இல்லை. படம் பதிவிறக்கம் ஆனது, Thermer-ல் திறந்து பிரிண்ட் செய்யுங்கள்.',true);
+      }
+    },'image/png');
+  }
+  $('print1').onclick=function(){stamp=nowStamp();drawQR1();doPrint(spec1(),setStatus)};
+  $('th1').onclick=function(){stamp=nowStamp();drawQR1();doThermer(spec1(),setStatus)};
+  $('print2').onclick=function(){if(payload2()){G.stamp=nowStamp();gateRender()}doPrint(spec2(),gStat2)};
+  $('th2').onclick=function(){if(payload2()){G.stamp=nowStamp();gateRender()}doThermer(spec2(),gStat2)};
+
+  // ---------- init ----------
+  updateBtns();renderInv();gateRender();applyMode();
+  window.addEventListener('load',function(){getWorker().catch(function(){})});
+})();
+</script>
+</body>
+</html>
